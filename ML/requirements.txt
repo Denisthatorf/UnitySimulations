@@ -1,0 +1,2 @@
+numpy
+mlagents==0.28.0
