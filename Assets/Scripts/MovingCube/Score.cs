@@ -7,7 +7,7 @@ using TMPro;
 public class Score : MonoBehaviour
 {
     [SerializeField] private Transform playerTransform;
-    [SerializeField] private TMP_Text scoreText;
+    private TMP_Text scoreText;
 
     void Awake()
     {
@@ -16,6 +16,7 @@ public class Score : MonoBehaviour
 
     void Update()
     {
-        scoreText.text = playerTransform.position.z.ToString("0");
+        float score = playerTransform.position.z;
+        scoreText.text = score.ToString("0");
     }
 }
