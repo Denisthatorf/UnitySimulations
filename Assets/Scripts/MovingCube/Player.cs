@@ -8,22 +8,23 @@ using Unity.MLAgents.Sensors;
 
 public class Player : Agent
 {
+    [SerializeField] private LevelGenerator levelGenerator;
     [SerializeField] private float forwardSpeed;
     [SerializeField] private float sidewaySpeed;
-    [SerializeField] private Floor floor;
+    //[SerializeField] private Floor floor;
     private Rigidbody playerRigidbody;
 
     public override void OnEpisodeBegin()
     {
+        levelGenerator.Reset();
         transform.localPosition = new Vector3( 0, 1.2f, 1);
-        //floor.Reset();
     }
 
-    public override void CollectObservations(VectorSensor sensor)
-    {
-        sensor.AddObservation(transform.localPosition);
-        //base.CollectObservations(sensor);
-    }
+    //public override void CollectObservations(VectorSensor sensor)
+    //{
+    //    sensor.AddObservation(transform.localPosition);
+    //    base.CollectObservations(sensor);
+    //}
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
@@ -34,16 +35,9 @@ public class Player : Agent
     public override void OnActionReceived(ActionBuffers actions)
     {
         float moveX = actions.ContinuousActions[0];
-        playerRigidbody.AddForce(0, 0, forwardSpeed * Time.deltaTime);          
-        playerRigidbody.AddForce(moveX * sidewaySpeed * Time.deltaTime, 0, 0, ForceMode.VelocityChange);
-
-        if(((int)transform.localPosition.z) % 20 == 0)
-        {
-            floor.Win();
-            AddReward(+0.2f); 
-        }
-
-        //transform.localPosition += new Vector3(moveX, 0, moveZ) * Time.deltaTime * moveSpeed;
+        //playerRigidbody.AddForce(0, 0, forwardSpeed * Time.deltaTime);          
+        //playerRigidbody.AddForce(moveX * sidewaySpeed * Time.deltaTime, 0, 0, ForceMode.VelocityChange);
+        transform.localPosition += new Vector3(moveX * sidewaySpeed, 0, forwardSpeed) * Time.deltaTime;
     }
 
     // ------ MonoBehaiviour Logic -------
@@ -56,9 +50,15 @@ public class Player : Agent
     {
         if(other.TryGetComponent<Wall>(out Wall wall))
         {
-            floor.Lose();
+            //floor.Lose();
             SetReward(-1.0f);
             EndEpisode();
+        }
+
+        if(other.TryGetComponent<CheckPoint>(out CheckPoint checkPoint))
+        {
+            levelGenerator.PassCheckPoint(); 
+            SetReward(0.2f); 
         }
     }
 
@@ -66,7 +66,7 @@ public class Player : Agent
     {
         if(other.collider.TryGetComponent<Barrier>(out Barrier barrier))
         {
-            floor.Lose();
+            //floor.Lose();
             SetReward(-1.0f);
             EndEpisode();
         }

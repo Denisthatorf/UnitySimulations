@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class FollowPlayer : MonoBehaviour
 {
-
     public Vector3 offset;
     [SerializeField] private Transform playerTransform;
 
