@@ -58,7 +58,7 @@ public class Player : Agent
         if(other.TryGetComponent<CheckPoint>(out CheckPoint checkPoint))
         {
             levelGenerator.PassCheckPoint(); 
-            SetReward(0.2f); 
+            SetReward(0.5f); 
         }
     }
 

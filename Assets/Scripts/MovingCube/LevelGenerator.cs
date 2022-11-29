@@ -23,6 +23,8 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private int offset;
 
     Queue<Chunk> chunks;
+    Queue<GameObject> freeToUseBarriers;
+    Queue<GameObject> freeToUseCheckPoints;
 
     private Vector3 startPosition;
     private Vector3 lastSpawnedPosition;
@@ -31,12 +33,13 @@ public class LevelGenerator : MonoBehaviour
 
     public void PassCheckPoint()
     {
-        numOfPassedCheckPoints += 1;
         if(numOfPassedCheckPoints == CHECKPOINT_FOR_NEXT_CHUNK)
         {
             GenerateNextChunk();
             numOfPassedCheckPoints = 5;
         }
+        
+        numOfPassedCheckPoints += 1;
     }
 
     public void Reset()
@@ -56,6 +59,8 @@ public class LevelGenerator : MonoBehaviour
             throw new Exception("Offset between Cubes must be more than 0");
 
         chunks = new Queue<Chunk>();
+        freeToUseBarriers = new Queue<GameObject>();
+        freeToUseCheckPoints = new Queue<GameObject>();
 
         startPosition = player.transform.position 
             - new Vector3(0, ROAD_FROM_PLAYER_OFFSET, 0);
@@ -74,6 +79,16 @@ public class LevelGenerator : MonoBehaviour
             chunks.Enqueue(chunk);
 
             lastSpawnedPosition.z += roadSize.z;
+
+            Vector3 pos = new Vector3(-100, -100, -100);
+            for (int j = 0; j < 2 * ((int)(roadSize.z) / offset); j++)
+            {
+                var barrier = Instantiate(barrierPrefab, pos, Quaternion.identity);
+                var checkPoint = Instantiate(checkPointPrefab, pos, Quaternion.identity);
+
+                freeToUseBarriers.Enqueue(barrier);
+                freeToUseCheckPoints.Enqueue(checkPoint);
+            }
         }
     }
 
@@ -90,10 +105,8 @@ public class LevelGenerator : MonoBehaviour
 
     private void GenerateEnvironment(Chunk chunk)
     {
-        foreach(var barriers in chunk.barriers)
-           Destroy(barriers); 
-        foreach(var checkPoint in chunk.checkPoints)
-            Destroy(checkPoint);
+        chunk.barriers.ForEach(obj => freeToUseBarriers.Enqueue(obj));
+        chunk.checkPoints.ForEach(obj => freeToUseCheckPoints.Enqueue(obj));
 
         chunk.barriers.Clear();
         chunk.checkPoints.Clear();
@@ -111,7 +124,9 @@ public class LevelGenerator : MonoBehaviour
             Vector3 checkPointPos = barrierPos;
             checkPointPos.z += 1; //TODO: Size Of Block 
 
-            var checkPoint = Instantiate(checkPointPrefab, checkPointPos, Quaternion.identity);
+            var checkPoint = freeToUseCheckPoints.Dequeue();
+            checkPoint.GetComponent<Transform>().position = checkPointPos;
+
             var barrierWall = GenerateBarrierWall(barrierPos);
 
             chunk.checkPoints.Add(checkPoint);
@@ -136,7 +151,8 @@ public class LevelGenerator : MonoBehaviour
         position.x -= roadOffset;
         position.x += freePos / 2.0f;
 
-        GameObject barrier1 = Instantiate(barrierPrefab, position, Quaternion.identity);
+        var barrier1 = freeToUseBarriers.Dequeue();
+        barrier1.GetComponent<Transform>().position = position;
         barrier1.GetComponent<Transform>().localScale = new Vector3(freePos, 1.0f, 1.0f);
         result.Add(barrier1);
 
@@ -145,7 +161,8 @@ public class LevelGenerator : MonoBehaviour
         positionBar2.x += GAPE_SIZE;
         positionBar2.x += (roadSize.x - GAPE_SIZE - freePos) / 2.0f;
 
-        GameObject barrier2 = Instantiate(barrierPrefab, positionBar2, Quaternion.identity);
+        GameObject barrier2 = freeToUseBarriers.Dequeue();
+        barrier2.GetComponent<Transform>().position = positionBar2;
         barrier2.GetComponent<Transform>().localScale = new Vector3(roadSize.x - GAPE_SIZE - freePos, 1.0f, 1.0f);
         result.Add(barrier2);
 
